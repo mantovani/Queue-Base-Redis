@@ -80,7 +80,7 @@ sub new {
 
 =head2 _redis 
 
-Internal
+Returns Redis object.
 
 =head2 redis
 
@@ -90,7 +90,11 @@ Internal
 
 Internal
 
-=head2 q_name
+=head2 _q_name
+
+Internal
+
+=head2 _all_keys
 
 Internal
 
@@ -116,7 +120,7 @@ sub _redis_connect {
       : return Redis->new();
 }
 
-sub q_name {
+sub _q_name {
     my ( $self, $element ) = @_;
     return $self->{queue_sufix} . '.' . $element;
 }
@@ -125,19 +129,19 @@ sub add {
     my ( $self, @args ) = @_;
     push @{ $self->{list} }, @args;
     foreach my $ele (@args) {
-        $self->redis->rpush( $self->q_name($ele), 1 );
+        $self->redis->rpush( $self->_q_name($ele), 1 );
     }
     return;
 }
 
 sub remove_all {
     my $self = shift;
-    my @keys = @{ $self->allkeys };
+    my @keys = @{ $self->_allkeys };
     $self->clear;
     return @keys;
 }
 
-sub allkeys {
+sub _allkeys {
     my $self  = shift;
     my $sufix = $self->{queue_sufix};
     my @keys  = $self->redis->keys("$sufix.*");
@@ -165,12 +169,12 @@ sub remove {
 }
 
 sub size {
-    return scalar( @{ shift->allkeys } );
+    return scalar( @{ shift->_allkeys } );
 }
 
 sub clear {
     my $self = shift;
-    foreach my $key ( @{ $self->allkeys } ) {
+    foreach my $key ( @{ $self->_allkeys } ) {
         $self->redis->del($key);
     }
     return;
